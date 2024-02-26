@@ -2,7 +2,7 @@ import "dotenv/config";
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 
-const books = [
+const books: any = [
   {
     id: 1,
     title: "The Awakening",
@@ -43,17 +43,17 @@ const authors = [
     {
         id: 3,
         name: "J.D. Salinger",
-        age: 91,
-    },
-];
+          age: 91,
+      },
+  ];
 
 
-const typeDefs = `
-    type Book {
-        id: ID
-        title: String
-        author: String
-        stock: Int
+  const typeDefs = `
+      type Book {
+          id: ID
+          title: String
+          author: String
+          stock: Int
     }
     type Author {
         id: ID
@@ -67,13 +67,25 @@ const typeDefs = `
         authors: [Author]
         author(id: ID!): Author
     }
+
+    input BookInput{
+      title: String
+      author: String
+      stock: Int
+    }
+
+    type Mutation {
+        addBook(book: BookInput): Book
+        deleteBook(id: ID!): Book
+        updateBook(id: ID!, title: String, stock: Int): Book
+    }
 `;
 
 const resolvers = {
   Query: {
     books: () => books,
     book(root: any, args: { id: string }) {
-        return books.find((book) => book.id === parseInt(args.id));
+        return books.find((book: { id: number; }) => book.id === parseInt(args.id));
     },
     authors: () => authors,
     author(root: any, args: { id: string }) {
@@ -81,12 +93,43 @@ const resolvers = {
     },
 
   },
+  Mutation: {
+    addBook: (root: any, args: { book: any }) => {
+        const newBook = {
+            id: books.length + 1,
+            title: args.book.title,
+            author: args.book.author,
+            stock: args.book.stock,
+        };
+        books.push(newBook);
+        return newBook;
+    },
+    deleteBook: (root: any, args: { id: string }) => {
+        const bookIndex = books.findIndex((book: { id: number; }) => book.id === parseInt(args.id));
+        const deletedBook = books[bookIndex];
+        books.splice(bookIndex, 1);
+        return deletedBook;
+    },
+    updateBook(root: any, args: { id: string, title: string, stock: number}) {
+      const bookIndex = books.findIndex((book: { id: number; }) => book.id === parseInt(args.id));
+      const updatedBook = {
+        ...books[bookIndex],
+        title: args.title,
+        stock: args.stock,
+      };
+      books[bookIndex] = updatedBook;
+      return updatedBook;
+    },
+
+
+  },
+
 };
 
 const server = new ApolloServer({ typeDefs, resolvers });
 
 (async () => {
-  const { url } = await 
+  const { url } = await startStandaloneServer
   (server, {
     listen: { port: 4000 },
   });
